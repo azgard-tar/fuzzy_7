@@ -165,7 +165,7 @@ const centerOfArea = (t: TriangularNumber): number => {
   return (t.l + t.m + t.u) / 3;
 };
 
-// --- Constants & Initial Data (Based on Table 1 & Practical Example) ---
+// --- Constants & Initial Data ---
 
 const DEFAULT_TERMS: LinguisticTerm[] = [
   { id: "1", name: "Equally important", shortName: "EI", value: 1, tri: { l: 1, m: 1, u: 1 } },
@@ -238,51 +238,19 @@ const getInitialMatrix = (size: number, terms: LinguisticTerm[], initialData: Re
     return matrix;
 };
 
-// Initial Data Map (Row-Col : Value)
-// C1=0, C2=1, C3=2, C4=3, C5=4
+// Initial Data Maps
 const initialCritValues = {
-    "0-1": 3,
-    "0-2": 4,
-    "0-3": 1,
-    "0-4": 1/2, // Inverse IV13
-    "1-2": 2,
-    "1-3": 1/3, // Inverse WI
-    "1-4": 1,
-    "2-3": 1/5, // Inverse FI
-    "2-4": 1/3, // Inverse WI
-    "3-4": 1/2, // Inverse IV13
+    "0-1": 3, "0-2": 4, "0-3": 1, "0-4": 1/2,
+    "1-2": 2, "1-3": 1/3, "1-4": 1,
+    "2-3": 1/5, "2-4": 1/3,
+    "3-4": 1/2,
 };
 
-// Alternatives
-const initialAlt1Values = { // C1 Cargo Support
-    "0-1": 2, // A1-A2 (1,2,3) -> IV13 (2)
-    "0-2": 4, // A1-A3 (3,4,5) -> IV35 (4)
-    "1-2": 3, // A2-A3 (2,3,4) -> WI (3)
-};
-
-const initialAlt2Values = { // C2 Insurance
-    "0-1": 1/3, // A1-A2 (1/4, 1/3, 1/2) -> Inv WI (3) -> 1/3
-    "0-2": 1/5, // A1-A3 (1/6, 1/5, 1/4) -> Inv FI (5) -> 1/5
-    "1-2": 1/3, // A2-A3 (1/4, 1/3, 1/2) -> Inv WI (3) -> 1/3
-};
-
-const initialAlt3Values = { // C3 Vehicle Monitoring
-    "0-1": 1/3, // A1-A2 -> Inv WI (3) -> 1/3 (Table 17 says 1/4,1/3,1/2)
-    "0-2": 2,   // A1-A3 -> IV13 (2) (1,2,3)
-    "1-2": 3,   // A2-A3 -> WI (3) (2,3,4)
-};
-
-const initialAlt4Values = { // C4 Safety
-    "0-1": 1,
-    "0-2": 2, // A1-A3 (1,2,3) -> 2
-    "1-2": 2, // A2-A3 (1,2,3) -> 2
-};
-
-const initialAlt5Values = { // C5 Timeliness
-    "0-1": 2, // (1,2,3) -> 2
-    "0-2": 1/3, // (1/4,1/3,1/2) -> 1/3
-    "1-2": 1/4, // (1/5,1/4,1/3) -> Inv IV35 (4) -> 1/4
-};
+const initialAlt1Values = { "0-1": 2, "0-2": 4, "1-2": 3 };
+const initialAlt2Values = { "0-1": 1/3, "0-2": 1/5, "1-2": 1/3 };
+const initialAlt3Values = { "0-1": 1/3, "0-2": 2, "1-2": 3 };
+const initialAlt4Values = { "0-1": 1, "0-2": 2, "1-2": 2 };
+const initialAlt5Values = { "0-1": 2, "0-2": 1/3, "1-2": 1/4 };
 
 
 const getInitialCritMatrixState = () => getInitialMatrix(5, DEFAULT_TERMS, initialCritValues);
@@ -297,7 +265,6 @@ const getInitialAltMatricesState = () => [
 
 
 // --- Theming ---
-
 const theme = createTheme({
   palette: {
     primary: { main: "#1976d2" },
@@ -327,7 +294,6 @@ const theme = createTheme({
 
 // --- Components ---
 
-// 1. Term Chart Component (Fig. 1)
 const TermChart: React.FC<{ terms: LinguisticTerm[] }> = ({ terms }) => {
   const data = useMemo(() => {
     const datasets = terms.map((term, index) => {
@@ -336,9 +302,7 @@ const TermChart: React.FC<{ terms: LinguisticTerm[] }> = ({ terms }) => {
         { x: term.tri.m, y: 1 },
         { x: term.tri.u, y: 0 },
       ];
-      
       const color = `hsl(${(index * 360) / terms.length}, 70%, 50%)`;
-      
       return {
         label: `${term.shortName} (${term.value})`,
         data: points,
@@ -350,7 +314,6 @@ const TermChart: React.FC<{ terms: LinguisticTerm[] }> = ({ terms }) => {
         showLine: true,
       };
     });
-
     return { datasets };
   }, [terms]);
 
@@ -368,19 +331,11 @@ const TermChart: React.FC<{ terms: LinguisticTerm[] }> = ({ terms }) => {
         max: maxX,
         title: { display: true, text: 'Saaty Scale / Fuzzy Scale' }
       },
-      y: {
-        min: 0,
-        max: 1.1,
-        title: { display: true, text: 'Membership Degree (µ)' }
-      }
+      y: { min: 0, max: 1.1, title: { display: true, text: 'Membership Degree (µ)' } }
     },
     plugins: {
       legend: { position: 'bottom' as const },
-      tooltip: {
-        callbacks: {
-          label: (ctx: any) => `${ctx.dataset.label}: x=${formatNumber(ctx.parsed.x, 2)}, µ=${formatNumber(ctx.parsed.y, 2)}`
-        }
-      }
+      tooltip: { callbacks: { label: (ctx: any) => `${ctx.dataset.label}: x=${formatNumber(ctx.parsed.x, 2)}, µ=${formatNumber(ctx.parsed.y, 2)}` } }
     }
   };
 
@@ -391,7 +346,6 @@ const TermChart: React.FC<{ terms: LinguisticTerm[] }> = ({ terms }) => {
   );
 };
 
-// 2. Modal Editor
 const LinguisticTermEditor: React.FC<{
   open: boolean;
   onClose: () => void;
@@ -415,39 +369,25 @@ const LinguisticTermEditor: React.FC<{
 
     currentTerms.forEach(term => {
         const termErrors: { [key: string]: string } = {};
-        
-        if (term.shortName.trim() === '') {
-            termErrors.shortName = "Обов'язково";
-        } else if (shortNames.has(term.shortName.trim())) {
-            termErrors.shortName = "Дублікат";
-        }
+        if (term.shortName.trim() === '') termErrors.shortName = "Обов'язково";
+        else if (shortNames.has(term.shortName.trim())) termErrors.shortName = "Дублікат";
         shortNames.add(term.shortName.trim());
 
-        if (values.has(term.value)) {
-            termErrors.value = "Дублікат";
-        }
+        if (values.has(term.value)) termErrors.value = "Дублікат";
         values.add(term.value);
 
         const { l, m, u } = term.tri;
-        if (l > m) {
-            termErrors.l = "l ≤ m";
-        }
-        if (m > u) {
-            termErrors.m = "m ≤ u";
-        }
+        if (l > m) termErrors.l = "l ≤ m";
+        if (m > u) termErrors.m = "m ≤ u";
         
-        if (Object.keys(termErrors).length > 0) {
-            newErrors[term.id] = termErrors;
-        }
+        if (Object.keys(termErrors).length > 0) newErrors[term.id] = termErrors;
     });
-
     return newErrors;
   }, []);
 
   const handleChange = (idx: number, field: keyof TriangularNumber | 'shortName' | 'name' | 'value', val: string) => {
     const newTerms = [...localTerms];
     const newTerm = { ...newTerms[idx] };
-
     if (field === 'l' || field === 'm' || field === 'u') {
         const num = parseFloat(val);
         newTerm.tri = { ...newTerm.tri, [field]: isNaN(num) ? 0 : num };
@@ -457,7 +397,6 @@ const LinguisticTermEditor: React.FC<{
     } else {
         (newTerm as any)[field] = val;
     }
-
     newTerms[idx] = newTerm;
     setLocalTerms(newTerms);
   };
@@ -473,11 +412,8 @@ const LinguisticTermEditor: React.FC<{
   };
   
   useEffect(() => {
-    if (open) {
-        setErrors(validate(localTerms));
-    }
+    if (open) setErrors(validate(localTerms));
   }, [localTerms, open, validate]);
-
 
   const addTerm = () => {
     const nextValue = localTerms.length > 0 ? Math.max(...localTerms.map(t => t.value)) + 1 : 1;
@@ -496,12 +432,9 @@ const LinguisticTermEditor: React.FC<{
   
   const hasGlobalError = Object.keys(errors).length > 0 || localTerms.length < 2;
 
-
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
-      <DialogTitle>
-        Редагування лінгвістичних термів (Таблиця 1)
-      </DialogTitle>
+      <DialogTitle>Редагування лінгвістичних термів</DialogTitle>
       <DialogContent>
         <Stack spacing={3}>
             <TermChart terms={localTerms} />
@@ -559,9 +492,7 @@ const LinguisticTermEditor: React.FC<{
                 </TableBody>
               </Table>
             </TableContainer>
-            <Button startIcon={<AddIcon />} onClick={addTerm} sx={{ alignSelf: 'flex-start' }}>
-                Додати новий терм
-            </Button>
+            <Button startIcon={<AddIcon />} onClick={addTerm} sx={{ alignSelf: 'flex-start' }}>Додати новий терм</Button>
             {localTerms.length < 2 && (
                 <FormHelperText error sx={{ textAlign: 'center' }}>Потрібно мінімум 2 терми для порівнянь.</FormHelperText>
             )}
@@ -575,7 +506,6 @@ const LinguisticTermEditor: React.FC<{
   );
 };
 
-// 3. Matrix Input Component
 const PairwiseMatrixInput: React.FC<{
   items: string[];
   matrix: MatrixCell[][];
@@ -586,59 +516,29 @@ const PairwiseMatrixInput: React.FC<{
 
   const options = useMemo(() => {
     const sortedTerms = [...terms].sort((a, b) => a.value - b.value);
-    const opts: Array<{
-      value: number;
-      label: string;
-      tri: TriangularNumber
-    }> = [];
+    const opts: Array<{ value: number; label: string; tri: TriangularNumber }> = [];
     
     // 1. Standard Terms
-    sortedTerms.forEach(t => {
-        opts.push({
-            value: t.value,
-            label: t.shortName,
-            tri: t.tri
-        });
-    });
+    sortedTerms.forEach(t => opts.push({ value: t.value, label: t.shortName, tri: t.tri }));
 
-    // 2. Inverse Terms (skip 1 because Inverse 1 is 1)
+    // 2. Inverse Terms (skip 1)
     sortedTerms.filter(t => t.value > 1).forEach(t => {
-        opts.push({
-            value: 1 / t.value,
-            label: `Inverse ${t.shortName}`,
-            tri: fuzzyInverse(t.tri) // Correct: tri here holds the already inverted values
-        });
+        opts.push({ value: 1 / t.value, label: `Inverse ${t.shortName}`, tri: fuzzyInverse(t.tri) });
     });
-
     return opts;
   }, [terms]);
-
   
-  // Gets the current selected value for the input field
-  const getCurrentSelectValue = (cell: MatrixCell): number => {
-    return cell.saatyValue || 1;
-  }
+  const getCurrentSelectValue = (cell: MatrixCell): number => cell.saatyValue || 1;
 
   return (
     <Paper sx={{ p: 2, mb: 3, overflowX: 'auto' }}>
-      <Typography variant="h6" gutterBottom color="primary">
-        {title}
-      </Typography>
+      <Typography variant="h6" gutterBottom color="primary">{title}</Typography>
       <Table size="small" sx={{ minWidth: 650 }}>
         <TableHead>
           <TableRow>
             <TableCell sx={{ backgroundColor: "#fff" }}>Vs.</TableCell>
             {items.map((item, idx) => (
-              <TableCell
-                key={idx}
-                align="center"
-                sx={{
-                  maxWidth: 100,
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
+              <TableCell key={idx} align="center" sx={{ maxWidth: 100, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {item.split('(')[0].trim()}
               </TableCell>
             ))}
@@ -656,27 +556,17 @@ const PairwiseMatrixInput: React.FC<{
                 const cell = matrix[r][c];
 
                 if (isDiagonal) {
-                  return (
-                    <TableCell key={c} align="center" sx={{ bgcolor: "#f5f5f5" }}>
-                      (1,1,1)
-                    </TableCell>
-                  );
+                  return <TableCell key={c} align="center" sx={{ bgcolor: "#f5f5f5" }}>(1,1,1)</TableCell>;
                 }
 
                 if (isLowerTriangle) {
-                  // Display inverse fraction (1/u, 1/m, 1/l) as required
                   return (
-                    <TableCell
-                      key={c}
-                      align="center"
-                      sx={{ bgcolor: "#fafafa", color: "text.secondary", fontSize: "0.8rem" }}
-                    >
+                    <TableCell key={c} align="center" sx={{ bgcolor: "#fafafa", color: "text.secondary", fontSize: "0.8rem" }}>
                       {formatTriInverse(cell.tri)}
                     </TableCell>
                   );
                 }
 
-                // Upper triangle - Input
                 return (
                   <TableCell key={c} align="center">
                     <Select
@@ -687,15 +577,10 @@ const PairwiseMatrixInput: React.FC<{
                       sx={{ fontSize: "0.85rem" }}
                       renderValue={(selected) => {
                          const opt = options.find(o => Math.abs(o.value - selected) < 0.0001);
-                         // Fix: use opt.tri directly for inverse terms, as it is already inverted in options
                          return opt ? (selected >= 1 ? formatTri(opt.tri) : formatTriInverse(opt.tri)) : formatNumber(selected);
                       }}
                     >
-                      {options.map(opt => (
-                        <MenuItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </MenuItem>
-                      ))}
+                      {options.map(opt => <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>)}
                     </Select>
                   </TableCell>
                 );
@@ -829,7 +714,6 @@ const TableAltNormalizedWeights: React.FC<{
     localWeights: number[];
     critIndex: number;
 }> = ({ criteriaName, altNames, matrix, localWeights, critIndex }) => {
-    
     const geoMeans = matrix.map(row => fuzzyGeoMean(row.map(c => c.tri)));
     const sumGeo = fuzzySum(geoMeans);
     const invSum = fuzzyInverse(sumGeo);
@@ -874,130 +758,13 @@ const TableAltNormalizedWeights: React.FC<{
     );
 };
 
-
-// --- Main Application ---
-
-function App() {
-  // --- State Configuration for Practical Example (5 Criteria, 3 Alternatives) ---
-  const [numCriteria] = useState(5);
-  const [numAlternatives] = useState(3);
-
-  const [terms, setTerms] = useState<LinguisticTerm[]>(DEFAULT_TERMS);
-  const [criteriaNames, setCriteriaNames] = useState<string[]>(INITIAL_CRITERIA_NAMES);
-  const [altNames, setAltNames] = useState<string[]>(INITIAL_ALT_NAMES);
-  
-  const [activeTab, setActiveTab] = useState(0);
-  const [modalOpen, setModalOpen] = useState(false);
-
-  // --- Matrices State (Fixed: added () to ensure functions are executed once) ---
-  const [critMatrix, setCritMatrix] = useState<MatrixCell[][]>(() => getInitialCritMatrixState());
-  const [altMatrices, setAltMatrices] = useState<MatrixCell[][][]>(() => getInitialAltMatricesState());
-
-
-  // --- Handlers ---
-
-  const handleCritMatrixChange = (r: number, c: number, val: number) => {
-    const termTri = getTriForValue(val, terms);
-    const newMat = [...critMatrix.map(row => [...row])];
-    
-    // Set upper triangle
-    newMat[r][c] = { tri: termTri, isInverse: val < 1, saatyValue: val };
-    // Set lower triangle (inverse)
-    newMat[c][r] = { tri: fuzzyInverse(termTri), isInverse: true, saatyValue: 1/val };
-
-    setCritMatrix(newMat);
-  };
-
-  const handleAltMatrixChange = (critIdx: number, r: number, c: number, val: number) => {
-    const termTri = getTriForValue(val, terms);
-    const newMatrices = [...altMatrices];
-    const newMat = newMatrices[critIdx].map(row => [...row]);
-
-    newMat[r][c] = { tri: termTri, isInverse: val < 1, saatyValue: val };
-    newMat[c][r] = { tri: fuzzyInverse(termTri), isInverse: true, saatyValue: 1/val };
-
-    newMatrices[critIdx] = newMat;
-    setAltMatrices(newMatrices);
-  };
-
-  const handleReset = () => {
-    setTerms(DEFAULT_TERMS);
-    setCriteriaNames(INITIAL_CRITERIA_NAMES);
-    setAltNames(INITIAL_ALT_NAMES);
-    setCritMatrix(() => getInitialCritMatrixState());
-    setAltMatrices(() => getInitialAltMatricesState());
-    setActiveTab(0);
-  };
-
-
-  // --- Calculation Logic ---
-  
-  const results = useMemo(() => {
-    if (critMatrix.length !== numCriteria || altMatrices.length !== numCriteria || altMatrices[0].length !== numAlternatives) return null;
-
-    // 1. Process Criteria
-    const critGeoMeans: TriangularNumber[] = critMatrix.map(row => fuzzyGeoMean(row.map(c => c.tri)));
-    const sumCritGeoMeans = fuzzySum(critGeoMeans);
-    const invSumCrit = fuzzyInverse(sumCritGeoMeans);
-    
-    const critFuzzyWeights = critGeoMeans.map(r => fuzzyMultiply(r, invSumCrit));
-    const critDefuzzified = critFuzzyWeights.map(w => centerOfArea(w));
-    const sumCritDefuzz = critDefuzzified.reduce((a, b) => a + b, 0);
-    const critNormWeights = critDefuzzified.map(v => sumCritDefuzz !== 0 ? v / sumCritDefuzz : 0);
-
-    // 2. Process Alternatives (per Criterion)
-    const altLocalWeights: number[][] = []; // [critIdx][altIdx] (Normalized)
-
-    altMatrices.forEach((mat) => {
-        const geoMeans = mat.map(row => fuzzyGeoMean(row.map(c => c.tri)));
-        const sumGeo = fuzzySum(geoMeans);
-        const invSum = fuzzyInverse(sumGeo);
-        const fuzzyWeights = geoMeans.map(r => fuzzyMultiply(r, invSum));
-        const defuzzified = fuzzyWeights.map(w => centerOfArea(w));
-        const sumDefuzz = defuzzified.reduce((a, b) => a + b, 0);
-        const normalized = defuzzified.map(v => sumDefuzz !== 0 ? v / sumDefuzz : 0);
-        altLocalWeights.push(normalized);
-    });
-
-    // 3. Global Scores (Table 33)
-    const globalScores = altNames.map((_, altIdx) => {
-        let score = 0;
-        for (let cIdx = 0; cIdx < numCriteria; cIdx++) {
-            const critWeight = critNormWeights[cIdx] || 0;
-            const altWeight = altLocalWeights[cIdx][altIdx] || 0;
-            score += critWeight * altWeight;
-        }
-        return score;
-    });
-
-    // Rank
-    const ranked = globalScores
-        .map((score, idx) => ({ name: altNames[idx], score, idx }))
-        .sort((a, b) => b.score - a.score);
-
-    return {
-        critGeoMeans,
-        sumCritGeoMeans,
-        invSumCrit,
-        critFuzzyWeights,
-        critNormWeights,
-        altLocalWeights, // [crit][alt]
-        globalScores,
-        ranked
-    };
-
-  }, [critMatrix, altMatrices, numCriteria, numAlternatives, altNames]);
-
-
-  // --- Components for Results Tab ---
-  
-  const TableAltWeightsCombined: React.FC<{
+const TableAltWeightsCombined: React.FC<{
     criteriaNames: string[];
     altNames: string[];
     critNormWeights: number[];
     altLocalWeights: number[][];
     globalScores: number[];
-  }> = ({ criteriaNames, altNames, critNormWeights, altLocalWeights, globalScores }) => (
+}> = ({ criteriaNames, altNames, critNormWeights, altLocalWeights, globalScores }) => (
     <TableContainer component={Paper} sx={{ mb: 3 }}>
         <Typography variant="h6" sx={{ p: 2, pb: 1, bgcolor: '#e3f2fd' }}>Таблиця 32 & 33. Фінальні результати</Typography>
         <Table size="small">
@@ -1041,20 +808,167 @@ function App() {
     </TableContainer>
   );
 
+
+// --- Main Application ---
+
+function App() {
+  const [terms, setTerms] = useState<LinguisticTerm[]>(DEFAULT_TERMS);
+  const [criteriaNames, setCriteriaNames] = useState<string[]>(INITIAL_CRITERIA_NAMES);
+  const [altNames, setAltNames] = useState<string[]>(INITIAL_ALT_NAMES);
+  
+  const [activeTab, setActiveTab] = useState(0);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const [critMatrix, setCritMatrix] = useState<MatrixCell[][]>(() => getInitialCritMatrixState());
+  const [altMatrices, setAltMatrices] = useState<MatrixCell[][][]>(() => getInitialAltMatricesState());
+
+  // Derived counts
+  const numCriteria = criteriaNames.length;
+  const numAlternatives = altNames.length;
+
+  // --- Dynamic Add/Delete Logic ---
+  
+  const handleAddCriterion = () => {
+    const newCritName = `Критерій ${numCriteria + 1}`;
+    setCriteriaNames(prev => [...prev, newCritName]);
+
+    // Resize Crit Matrix: Add row and col
+    setCritMatrix(prev => {
+        const size = prev.length;
+        const newRow = Array(size + 1).fill(null).map(() => ({ tri: T_ONE, isInverse: false, saatyValue: 1 }));
+        const newMat = prev.map(row => [...row, { tri: T_ONE, isInverse: false, saatyValue: 1 }]);
+        newMat.push(newRow);
+        return newMat;
+    });
+
+    // Add a new Matrix for this criterion in AltMatrices
+    setAltMatrices(prev => [...prev, getInitialMatrix(numAlternatives, terms)]);
+  };
+
+  const handleDeleteCriterion = (index: number) => {
+    if (numCriteria <= 2) return;
+    setCriteriaNames(prev => prev.filter((_, i) => i !== index));
+
+    setCritMatrix(prev => {
+        const newMat = prev.filter((_, r) => r !== index).map(row => row.filter((_, c) => c !== index));
+        return newMat;
+    });
+
+    setAltMatrices(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleAddAlternative = () => {
+      const newAltName = `Альтернатива ${numAlternatives + 1}`;
+      setAltNames(prev => [...prev, newAltName]);
+
+      // Resize EVERY Alt Matrix: Add row and col to each
+      setAltMatrices(prev => prev.map(mat => {
+          const size = mat.length;
+          const newRow = Array(size + 1).fill(null).map(() => ({ tri: T_ONE, isInverse: false, saatyValue: 1 }));
+          const newMat = mat.map(row => [...row, { tri: T_ONE, isInverse: false, saatyValue: 1 }]);
+          newMat.push(newRow);
+          return newMat;
+      }));
+  };
+
+  const handleDeleteAlternative = (index: number) => {
+      if (numAlternatives <= 2) return;
+      setAltNames(prev => prev.filter((_, i) => i !== index));
+
+      // Resize EVERY Alt Matrix: Remove row/col at index
+      setAltMatrices(prev => prev.map(mat => {
+          return mat.filter((_, r) => r !== index).map(row => row.filter((_, c) => c !== index));
+      }));
+  };
+
+
+  const handleCritMatrixChange = (r: number, c: number, val: number) => {
+    const termTri = getTriForValue(val, terms);
+    const newMat = [...critMatrix.map(row => [...row])];
+    newMat[r][c] = { tri: termTri, isInverse: val < 1, saatyValue: val };
+    newMat[c][r] = { tri: fuzzyInverse(termTri), isInverse: true, saatyValue: 1/val };
+    setCritMatrix(newMat);
+  };
+
+  const handleAltMatrixChange = (critIdx: number, r: number, c: number, val: number) => {
+    const termTri = getTriForValue(val, terms);
+    const newMatrices = [...altMatrices];
+    const newMat = newMatrices[critIdx].map(row => [...row]);
+    newMat[r][c] = { tri: termTri, isInverse: val < 1, saatyValue: val };
+    newMat[c][r] = { tri: fuzzyInverse(termTri), isInverse: true, saatyValue: 1/val };
+    newMatrices[critIdx] = newMat;
+    setAltMatrices(newMatrices);
+  };
+
+  const handleReset = () => {
+    setTerms(DEFAULT_TERMS);
+    setCriteriaNames(INITIAL_CRITERIA_NAMES);
+    setAltNames(INITIAL_ALT_NAMES);
+    setCritMatrix(() => getInitialCritMatrixState());
+    setAltMatrices(() => getInitialAltMatricesState());
+    setActiveTab(0);
+  };
+
+  const results = useMemo(() => {
+    if (critMatrix.length !== numCriteria || altMatrices.length !== numCriteria) return null;
+    // Safety check for inner dimensions
+    if (altMatrices.some(m => m.length !== numAlternatives)) return null;
+
+    // 1. Process Criteria
+    const critGeoMeans = critMatrix.map(row => fuzzyGeoMean(row.map(c => c.tri)));
+    const sumCritGeoMeans = fuzzySum(critGeoMeans);
+    const invSumCrit = fuzzyInverse(sumCritGeoMeans);
+    const critFuzzyWeights = critGeoMeans.map(r => fuzzyMultiply(r, invSumCrit));
+    const critDefuzzified = critFuzzyWeights.map(w => centerOfArea(w));
+    const sumCritDefuzz = critDefuzzified.reduce((a, b) => a + b, 0);
+    const critNormWeights = critDefuzzified.map(v => sumCritDefuzz !== 0 ? v / sumCritDefuzz : 0);
+
+    // 2. Process Alternatives
+    const altLocalWeights: number[][] = [];
+    altMatrices.forEach((mat) => {
+        const geoMeans = mat.map(row => fuzzyGeoMean(row.map(c => c.tri)));
+        const sumGeo = fuzzySum(geoMeans);
+        const invSum = fuzzyInverse(sumGeo);
+        const fuzzyWeights = geoMeans.map(r => fuzzyMultiply(r, invSum));
+        const defuzzified = fuzzyWeights.map(w => centerOfArea(w));
+        const sumDefuzz = defuzzified.reduce((a, b) => a + b, 0);
+        const normalized = defuzzified.map(v => sumDefuzz !== 0 ? v / sumDefuzz : 0);
+        altLocalWeights.push(normalized);
+    });
+
+    // 3. Global Scores
+    const globalScores = altNames.map((_, altIdx) => {
+        let score = 0;
+        for (let cIdx = 0; cIdx < numCriteria; cIdx++) {
+            const critWeight = critNormWeights[cIdx] || 0;
+            const altWeight = altLocalWeights[cIdx][altIdx] || 0;
+            score += critWeight * altWeight;
+        }
+        return score;
+    });
+
+    const ranked = globalScores
+        .map((score, idx) => ({ name: altNames[idx], score, idx }))
+        .sort((a, b) => b.score - a.score);
+
+    return {
+        critGeoMeans, sumCritGeoMeans, invSumCrit, critFuzzyWeights, critNormWeights, altLocalWeights, globalScores, ranked
+    };
+  }, [critMatrix, altMatrices, numCriteria, numAlternatives, altNames]);
+
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AppBar position="static" color="default" elevation={1}>
         <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
            <Typography variant="h5" color="primary" sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-             <InfoOutlinedIcon /> Fuzzy AHP (Метод Баклі) - Транспортна Компанія
+             <InfoOutlinedIcon /> Fuzzy AHP
            </Typography>
-           <Button startIcon={<RestartAltIcon />} color="error" onClick={handleReset}>
-             Скинути дані
-           </Button>
+           <Button startIcon={<RestartAltIcon />} color="error" onClick={handleReset}>Скинути дані</Button>
         </Box>
         <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} centered>
-          <Tab label="1. Налаштування / Терми" />
+          <Tab label="1. Налаштування" />
           <Tab label="2. Порівняння Критеріїв" />
           <Tab label="3. Порівняння Альтернатив" />
           <Tab label="4. Кроки Розрахунку" />
@@ -1069,54 +983,50 @@ function App() {
              <Paper sx={{ p: 3 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                   <Typography variant="h6">Параметри задачі</Typography>
-                  <Button startIcon={<EditIcon />} variant="outlined" onClick={() => setModalOpen(true)}>
-                    Редагувати нечіткі терми
-                  </Button>
+                  <Button startIcon={<EditIcon />} variant="outlined" onClick={() => setModalOpen(true)}>Редагувати терми</Button>
                 </Box>
                 
                 <Grid container spacing={4}>
                    <Grid>
                       <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>Критерії ({numCriteria})</Typography>
                       {criteriaNames.map((name, idx) => (
-                        <TextField 
-                          key={idx} 
-                          fullWidth 
-                          size="small" 
-                          value={name} 
-                          onChange={(e) => {
-                             const newNames = [...criteriaNames];
-                             newNames[idx] = e.target.value;
-                             setCriteriaNames(newNames);
-                          }}
-                          sx={{ mb: 1 }}
-                          label={`Критерій ${idx + 1}`}
-                        />
+                         <Box key={idx} sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                            <TextField fullWidth size="small" value={name} onChange={(e) => {
+                                 const newNames = [...criteriaNames];
+                                 newNames[idx] = e.target.value;
+                                 setCriteriaNames(newNames);
+                              }}
+                              label={`Критерій ${idx + 1}`}
+                            />
+                            <IconButton color="error" onClick={() => handleDeleteCriterion(idx)} disabled={numCriteria <= 2}>
+                                <DeleteIcon />
+                            </IconButton>
+                        </Box>
                       ))}
+                      <Button startIcon={<AddIcon />} variant="outlined" onClick={handleAddCriterion} sx={{ mt: 1 }}>Додати критерій</Button>
                    </Grid>
                    <Grid>
                       <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>Альтернативи ({numAlternatives})</Typography>
                       {altNames.map((name, idx) => (
-                        <TextField 
-                          key={idx} 
-                          fullWidth 
-                          size="small" 
-                          value={name} 
-                          onChange={(e) => {
-                             const newNames = [...altNames];
-                             newNames[idx] = e.target.value;
-                             setAltNames(newNames);
-                          }}
-                          sx={{ mb: 1 }}
-                          label={`Альтернатива ${idx + 1}`}
-                        />
+                        <Box key={idx} sx={{ display: 'flex', gap: 1, mb: 1 }}>
+                            <TextField fullWidth size="small" value={name} onChange={(e) => {
+                                 const newNames = [...altNames];
+                                 newNames[idx] = e.target.value;
+                                 setAltNames(newNames);
+                              }}
+                              label={`Альтернатива ${idx + 1}`}
+                            />
+                            <IconButton color="error" onClick={() => handleDeleteAlternative(idx)} disabled={numAlternatives <= 2}>
+                                <DeleteIcon />
+                            </IconButton>
+                        </Box>
                       ))}
+                      <Button startIcon={<AddIcon />} variant="outlined" onClick={handleAddAlternative} sx={{ mt: 1 }}>Додати альтернативу</Button>
                    </Grid>
                 </Grid>
              </Paper>
              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <Button variant="contained" endIcon={<ArrowForwardIosIcon />} onClick={() => setActiveTab(1)}>
-                  Далі до порівняння Критеріїв
-                </Button>
+                <Button variant="contained" endIcon={<ArrowForwardIosIcon />} onClick={() => setActiveTab(1)}>Далі до порівняння Критеріїв</Button>
              </Box>
           </Stack>
         )}
@@ -1162,43 +1072,13 @@ function App() {
         {activeTab === 3 && results && (
           <Stack spacing={3}>
              <Typography variant="h5" color="primary">Кроки Розрахунку (Steps 2-5)</Typography>
-
-             <TableFuzzyWeights
-                 criteriaNames={criteriaNames}
-                 critGeoMeans={results.critGeoMeans}
-                 critFuzzyWeights={results.critFuzzyWeights}
-                 sumCritGeoMeans={results.sumCritGeoMeans}
-                 invSumCrit={results.invSumCrit}
-             />
-             
-             <TableNormalizedWeights
-                 criteriaNames={criteriaNames}
-                 critFuzzyWeights={results.critFuzzyWeights}
-                 critNormWeights={results.critNormWeights}
-             />
-             
+             <TableFuzzyWeights criteriaNames={criteriaNames} critGeoMeans={results.critGeoMeans} critFuzzyWeights={results.critFuzzyWeights} sumCritGeoMeans={results.sumCritGeoMeans} invSumCrit={results.invSumCrit} />
+             <TableNormalizedWeights criteriaNames={criteriaNames} critFuzzyWeights={results.critFuzzyWeights} critNormWeights={results.critNormWeights} />
              <Typography variant="h6" color="primary" sx={{mt: 3}}>Ваги Альтернатив відносно Критеріїв (Steps 2-5 повторно)</Typography>
-
              {criteriaNames.map((critName, cIdx) => (
-                <TableAltNormalizedWeights
-                   key={cIdx}
-                   criteriaName={critName}
-                   altNames={altNames}
-                   matrix={altMatrices[cIdx]}
-                   localWeights={results.altLocalWeights[cIdx]}
-                   critIndex={cIdx}
-                />
+                <TableAltNormalizedWeights key={cIdx} criteriaName={critName} altNames={altNames} matrix={altMatrices[cIdx]} localWeights={results.altLocalWeights[cIdx]} critIndex={cIdx} />
              ))}
-
-             <TableAltWeightsCombined
-                 criteriaNames={criteriaNames}
-                 altNames={altNames}
-                 critNormWeights={results.critNormWeights}
-                 altLocalWeights={results.altLocalWeights}
-                 globalScores={results.globalScores}
-             />
-
-             {/* Final Ranking */}
+             <TableAltWeightsCombined criteriaNames={criteriaNames} altNames={altNames} critNormWeights={results.critNormWeights} altLocalWeights={results.altLocalWeights} globalScores={results.globalScores} />
              <Paper sx={{ p: 3, border: '2px solid #4caf50' }}>
                 <Typography variant="h5" gutterBottom align="center" color="success.main">Фінальне Ранжування</Typography>
                 <TableContainer>
@@ -1213,40 +1093,22 @@ function App() {
                       <TableBody>
                          {results.ranked.map((item, idx) => (
                             <TableRow key={item.idx} hover sx={{ bgcolor: idx === 0 ? '#e8f5e9' : 'inherit' }}>
-                               <TableCell align="center">
-                                  <Typography variant="h4" color={idx === 0 ? 'success.main' : 'text.secondary'}>
-                                     {idx + 1}
-                                  </Typography>
-                               </TableCell>
-                               <TableCell>
-                                  <Typography variant="h6">{item.name}</Typography>
-                               </TableCell>
-                               <TableCell align="right">
-                                  <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                                     {formatNumber(item.score)}
-                                  </Typography>
-                               </TableCell>
+                               <TableCell align="center"><Typography variant="h4" color={idx === 0 ? 'success.main' : 'text.secondary'}>{idx + 1}</Typography></TableCell>
+                               <TableCell><Typography variant="h6">{item.name}</Typography></TableCell>
+                               <TableCell align="right"><Typography variant="h6" sx={{ fontWeight: 'bold' }}>{formatNumber(item.score)}</Typography></TableCell>
                             </TableRow>
                          ))}
                       </TableBody>
                    </Table>
                 </TableContainer>
              </Paper>
-
              <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
                 <Button startIcon={<ArrowBackIosNewIcon />} onClick={() => setActiveTab(2)}>Назад до порівняння Альтернатив</Button>
              </Box>
           </Stack>
         )}
       </Container>
-
-      {/* Editor Modal */}
-      <LinguisticTermEditor 
-         open={modalOpen} 
-         onClose={() => setModalOpen(false)} 
-         terms={terms} 
-         onSave={setTerms} 
-      />
+      <LinguisticTermEditor open={modalOpen} onClose={() => setModalOpen(false)} terms={terms} onSave={setTerms} />
     </ThemeProvider>
   );
 }
